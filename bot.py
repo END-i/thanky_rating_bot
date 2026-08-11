@@ -3,19 +3,17 @@ import sqlite3
 import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, MessageReactionUpdated
+from aiohttp import web
 
-# Отримання токена зі змінних оточення Koyeb
 BOT_TOKEN = os.getenv("8809668157:AAFLcMLEAOin-l0yLygDlfeViTiHLeWKUbk")
 DB_FILE = "rating.db"
 
-# Словники для перевірки
 POSITIVE_WORDS = {
     "дякую", "спасибо", "thank you", "thanks", "дяка", 
     "спасибули", "спасибі", "спс", "thx", "ty", "danke"
 }
 POSITIVE_EMOJIS = {"👍", "❤️", "🔥", "🥰", "👏", "🤝", "💯", "🫶", "💖", "🤍"}
 
-# Локалізація повідомлень
 MESSAGES = {
     "uk": "Користувач {name} отримав +1 до рейтингу.\nЗагальний рейтинг: {rating}",
     "en": "User {name} received +1 rating.\nTotal rating: {rating}"
@@ -70,10 +68,23 @@ async def handle_reaction(reaction: MessageReactionUpdated):
         
     for current_reaction in reaction.new:
         if current_reaction.type == "emoji" and current_reaction.emoji in POSITIVE_EMOJIS:
-            pass # Облік реакцій потребує додаткової бази даних для збереження історії повідомлень
+            pass
+
+async def handle(request):
+    return web.Response(text="Bot is running")
 
 async def main():
     init_db()
+    
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = int(os.getenv("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
